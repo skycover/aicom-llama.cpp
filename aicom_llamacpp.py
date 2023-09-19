@@ -52,7 +52,7 @@ def interact():
     )
 
     server = HTTPServer((args.host, args.port), HttpHandler)
-    print('Starting server, use Ctrl+C to stop')
+    print(f"Starting server at {args.host}:{+args.port}, use Ctrl+C to stop")
     server.serve_forever()
 
 
@@ -79,7 +79,7 @@ class HttpHandler(BaseHTTPRequestHandler):
         elif path == '/query':
             # query: { {params}, [messages: (role, content)] }
             query = self.rfile.read1().decode('utf-8');
-            print("\n SEND: ", query)
+            print("\n GOT: ", query)
             try:
                 pquery = json.loads(query)
                 if args.key != '' and args.key != pquery.get('key',''):
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     parser.add_argument('--n_ctx', required=False, type=int, default=2000, help='context size')
     parser.add_argument('--top_k', required=False, type=int, default=30)
     parser.add_argument('--top_p', required=False, type=float, default=0.9)
-    parser.add_argument('--temperature', required=False, type=float, default=0.5)
+    parser.add_argument('--temperature', required=False, type=float, default=0.2)
     parser.add_argument('--repeat_penalty', required=False, type=float, default=1.1)
     parser.add_argument('--n_gpu_layers', required=False, type=int, default=0, help='set 1 for Metal (Apple M1,M2)')
     # defaults from 
