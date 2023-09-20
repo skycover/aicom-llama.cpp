@@ -79,7 +79,6 @@ python aicom_llamacpp.py -m models/YOUR__MODEL.gguf
 
 For Metal (Apple M1, M2) GPU run
 ```
-. venv/bin/activate
 python aicom_llamacpp.py -m models/YOUR__MODEL.gguf --n_gpu_layers=1
 ```
 
