@@ -4,12 +4,12 @@ Made for https://github.com/skycover/aicom-obsidian/ project.
 
 This is the simple one-evening built server that run llama.cpp
 via the python bingings.
-In fact, both llama.cpp and llama-cpp-python have a good servers inside themselves.
 
+In fact, both llama.cpp and llama-cpp-python already have a good servers inside themselves.
 The main goal to make another one is to set up a minimalistic sandbox to experiment for
 various unusual things via simple python code without any infrastructure complications.
 
-The interact_llamacpp.py from https://raw.githubusercontent.com/IlyaGusev/rulm was got as the bones.
+The interact_llamacpp.py from https://github.com/IlyaGusev/rulm was got as the bones.
 
 ## API
 
@@ -26,6 +26,7 @@ return 200, int: total number of tokens.
 Call /query it to start inference.
 
 'key' is optional, checked if --key was given.
+
 'params' may be {}. In this case the server defaults are used.
 
 Role is one of: system, user, bot.
