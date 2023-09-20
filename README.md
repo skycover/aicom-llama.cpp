@@ -40,16 +40,16 @@ return 200, str: one token OR '' if no tokens ready OR '[[END OF AICOM SENTENCE]
 
 You should check /receive repeatedly, ignoring empty results until '[[END OF AICOM SENTENCE]]' will be received.
 
-If you'll stop check, then the inference will stop and free memory till next request. Simple stop requests if you
+If you'll stop check, then the inference will stop till the next request. Simple stop requests if you
 don't want to get the rest of inference.
 
 If you'll send a new /query, then inference will be restarted.
 
 ## Security
 
-Unless --key option is given, the client will be restricted to the same host (may not work behind proxy).
+Unless --key option is given, the client will be restricted to the same host (this check may have nonsense behind proxy).
 
-We recommend to use --key option to set key-based access and also to use https proxy if you serve via network.
+It is recommended to use --key option to set key-based access and also to use https proxy if you serve via network.
 
 ## Install
 
@@ -60,17 +60,30 @@ pip install llama-cpp-python
 mkdir models
 ```
 
-Download llama.cpp compatible model into models.
+Download llama.cpp compatible model into models/.
 For example any GGUF from https://huggingface.co/TheBloke
 
 For Russian language check https://huggingface.co/IlyaGusev/saiga2_13b_gguf
 
-Run
+## Run
+
+Activate venv
+```
+. venv/bin/activate
+```
+
+Then
 ```
 python aicom_llamacpp.py -m models/YOUR__MODEL.gguf
 ```
 
 For Metal (Apple M1, M2) GPU run
 ```
+. venv/bin/activate
 python aicom_llamacpp.py -m models/YOUR__MODEL.gguf --n_gpu_layers=1
+```
+
+For help on parameters
+```
+python aicom_llamacpp.py -h
 ```
