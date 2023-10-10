@@ -31,18 +31,25 @@ def get_system_tokens(model, prompt):
     }
     return get_message_tokens(model, **system_message)
 
-def tokenize_context(model, mwssages):
+def tokenize_context_llama2_chat(model, mwssages):
     tokens = []
     for (role, content) in mwssages:
         tokens += get_message_tokens(model, role, content)
     return tokens
 
+def tokenize_context_saiga(model, messages):
+    tokens = []
+    for (role, content) in messages:
+        tokens += get_message_tokens(model, role, content)
+    return tokens
+
+tokenize_context = tokenize_context_saiga
 model = ''
 tokens = []
 args = {}
 
 def interact():
-    global model, args
+    global model, args, tokenize_context
 
     model = Llama(
         model_path=args.model,
@@ -50,6 +57,9 @@ def interact():
         n_parts=1,
         n_gpu_layers=args.n_gpu_layers,
     )
+
+    if args.syntax == 'chat':
+        tokenize_context = tokenize_context_llama2_chat
 
     server = HTTPServer((args.host, args.port), HttpHandler)
     print(f"Starting server at {args.host}:{+args.port}, use Ctrl+C to stop")
@@ -88,13 +98,14 @@ class HttpHandler(BaseHTTPRequestHandler):
 
                 tokens = tokenize_context(model, pquery['messages'])
                 role_tokens = [model.token_bos(), BOT_TOKEN, LINEBREAK_TOKEN]
-                tokens += tokens + role_tokens
+                tokens += role_tokens
                 generator = model.generate(
                     tokens,
                     top_k = pquery['params'].get('top_k', args.top_k),
                     top_p = pquery['params'].get('top_p', args.top_p),
                     temp = pquery['params'].get('temperature', args.temperature),
-                    repeat_penalty = pquery['params'].get('repeat_penalty', args.repeat_penalty)
+                    repeat_penalty = pquery['params'].get('repeat_penalty', args.repeat_penalty),
+                    #seed = pquery['params'].get('seed', args.seed),
                 )
                 self.send_reply(200, str(len(tokens)))
             except json.JSONDecodeError as e:
@@ -143,6 +154,7 @@ class HttpHandler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model', required=True, help='model pathname')
+    parser.add_argument('-s', '--syntax', required=False, default='saiga', help='syntax type: saiga, chat')
     parser.add_argument('-l', '--host', required=False, default='127.0.0.1', help='listen IP address (not DNS name)')
     parser.add_argument('-p', '--port', required=False, type=int, default=8080, help='listen port')
     parser.add_argument('-k', '--key', required=False, default='', help='secret key')
@@ -151,6 +163,7 @@ if __name__ == "__main__":
     parser.add_argument('--top_p', required=False, type=float, default=0.9)
     parser.add_argument('--temperature', required=False, type=float, default=0.2)
     parser.add_argument('--repeat_penalty', required=False, type=float, default=1.1)
+    parser.add_argument('--seed', required=False, type=float, default=1337)
     parser.add_argument('--n_gpu_layers', required=False, type=int, default=0, help='set 1 for Metal (Apple M1,M2)')
     # defaults from 
     #top_k=40,
