@@ -14,33 +14,51 @@ ROLE_TOKENS = {
     "system": SYSTEM_TOKEN
 }
 
+# chat template:
+# <s>[INST] <<SYS>>\n{your_system_message}\n<</SYS>>\n\n{user_message_1} [/INST] {model_reply_1}</s><s>[INST] {user_message_2} [/INST]
 
-def get_message_tokens(model, role, content):
+
+def get_message_tokens_chat(model, role, content, was_system):
+    if role == "system":
+      if was_system: # bad condition, but let's handle
+          message_tokens = model.tokenize((" [/INST]</s><s>[INST] <<SYS>>\n%s\n<</SYS>>" % content).encode('utf-8'))
+      else: # opening message
+          message_tokens = model.tokenize(("<s>[INST] <<SYS>>\n%s\n<</SYS>>" % content).encode('utf-8'))
+    elif role == "user":
+      if was_system: # append message to system
+          message_tokens = model.tokenize(("\n\n%s [/INST]" % content).encode('utf-8'))
+      else: # start new message
+          message_tokens = model.tokenize(("<s>[INST] %s [/INST]" % content).encode('utf-8'))
+    elif role == "bot":
+      if was_system: # append message to system
+          message_tokens = model.tokenize(("[/INST] %s</s>" % content).encode('utf-8'))
+      else: # append message to instruction
+          message_tokens = model.tokenize((" %s</s>" % content).encode('utf-8'))
+
+    return message_tokens
+
+def tokenize_context_chat(model, messages):
+    tokens = []
+    was_system = False
+    for (role, content) in messages:
+        tokens += get_message_tokens_chat(model, role, content, was_system)
+        was_system = role == "system"
+    print(model.detokenize(tokens).decode("utf-8", errors="ignore"))
+    return tokens
+
+def get_message_tokens_saiga(model, role, content):
     message_tokens = model.tokenize(content.encode("utf-8"))
     message_tokens.insert(1, ROLE_TOKENS[role])
     message_tokens.insert(2, LINEBREAK_TOKEN)
     message_tokens.append(model.token_eos())
     return message_tokens
 
-
-# example only
-def get_system_tokens(model, prompt):
-    system_message = {
-        "role": "system",
-        "content": prompt
-    }
-    return get_message_tokens(model, **system_message)
-
-def tokenize_context_llama2_chat(model, mwssages):
-    tokens = []
-    for (role, content) in mwssages:
-        tokens += get_message_tokens(model, role, content)
-    return tokens
-
 def tokenize_context_saiga(model, messages):
     tokens = []
     for (role, content) in messages:
-        tokens += get_message_tokens(model, role, content)
+        tokens += get_message_tokens_saiga(model, role, content)
+    role_tokens = [model.token_bos(), BOT_TOKEN, LINEBREAK_TOKEN]
+    tokens += role_tokens
     return tokens
 
 tokenize_context = tokenize_context_saiga
@@ -59,7 +77,7 @@ def interact():
     )
 
     if args.syntax == 'chat':
-        tokenize_context = tokenize_context_llama2_chat
+        tokenize_context = tokenize_context_chat
 
     server = HTTPServer((args.host, args.port), HttpHandler)
     print(f"Starting server at {args.host}:{+args.port}, use Ctrl+C to stop")
@@ -97,8 +115,6 @@ class HttpHandler(BaseHTTPRequestHandler):
                     return
 
                 tokens = tokenize_context(model, pquery['messages'])
-                role_tokens = [model.token_bos(), BOT_TOKEN, LINEBREAK_TOKEN]
-                tokens += role_tokens
                 generator = model.generate(
                     tokens,
                     top_k = pquery['params'].get('top_k', args.top_k),

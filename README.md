@@ -65,6 +65,14 @@ For example any GGUF from https://huggingface.co/TheBloke
 
 For Russian language check https://huggingface.co/IlyaGusev/saiga2_13b_gguf
 
+For a good experience I suggest to use at least 13B models, quantized to at least 3bits (4 bits will be a bit better :).
+
+## Model conversation templates
+
+When using Llama2-chat model, specify "-s chat" in command line.
+Otherwise the Saiga format will be used.
+The formatters are custom (not library ones) for the historical reasons.
+
 ## Run
 
 Activate venv
@@ -85,4 +93,16 @@ python aicom_llamacpp.py -m models/YOUR__MODEL.gguf --n_gpu_layers=1
 For help on parameters
 ```
 python aicom_llamacpp.py -h
+```
+
+## Examples
+
+Llama2-chat on Mac with access key
+```
+python aicom_llamacpp.py -k secret -m models/13B/llama-2-13b-chat.Q4_K_M.gguf --n_gpu_layers=1 -s chat
+```
+
+Saiga on Mac with access key
+```
+python aicom_llamacpp.py -k secret -m models/13B/ggml-model-q4_K.gguf --n_gpu_layers=1
 ```
