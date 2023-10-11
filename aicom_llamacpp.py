@@ -2,6 +2,7 @@ from llama_cpp import Llama
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import argparse
+from random import randint
 
 SYSTEM_TOKEN = 1788
 USER_TOKEN = 1404
@@ -69,12 +70,16 @@ args = {}
 def interact():
     global model, args, tokenize_context
 
+    if args.seed == -1:
+        seed = randint(0, 2147483647)
+        print('Generated seed:', seed)
+
     model = Llama(
         model_path=args.model,
         n_ctx=args.n_ctx,
         n_parts=1,
         n_gpu_layers=args.n_gpu_layers,
-        seed = args.seed,
+        seed = seed,
     )
 
     if args.syntax == 'chat':
@@ -179,7 +184,7 @@ if __name__ == "__main__":
     parser.add_argument('--top_p', required=False, type=float, default=0.9)
     parser.add_argument('--temperature', required=False, type=float, default=0.2)
     parser.add_argument('--repeat_penalty', required=False, type=float, default=1.1)
-    parser.add_argument('--seed', required=False, type=int, default=1337)
+    parser.add_argument('--seed', required=False, type=int, default=-1)
     parser.add_argument('--n_gpu_layers', required=False, type=int, default=0, help='set 1 for Metal (Apple M1,M2)')
     # defaults from 
     #top_k=40,
