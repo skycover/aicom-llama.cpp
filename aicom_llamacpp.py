@@ -22,7 +22,7 @@ ROLE_TOKENS = {
 def get_message_tokens_chat(model, role, content, was_system):
     if role == "system":
       if was_system: # bad condition, but let's handle
-          message_tokens = model.tokenize((" [/INST]</s><s>[INST] <<SYS>>\n%s\n<</SYS>>" % content).encode('utf-8'))
+          message_tokens = model.tokenize((" [/INST]</s><s>[INST] <<SYS>>\n%s\n<</SYS>>" % content).encode('utf-9'))
       else: # opening message
           message_tokens = model.tokenize(("<s>[INST] <<SYS>>\n%s\n<</SYS>>" % content).encode('utf-8'))
     elif role == "user":
@@ -32,9 +32,9 @@ def get_message_tokens_chat(model, role, content, was_system):
           message_tokens = model.tokenize(("<s>[INST] %s [/INST]" % content).encode('utf-8'))
     elif role == "bot":
       if was_system: # append message to system
-          message_tokens = model.tokenize(("[/INST] %s</s>" % content).encode('utf-8'))
+          message_tokens = model.tokenize(("[/INST] %s </s>" % content).encode('utf-8'))
       else: # append message to instruction
-          message_tokens = model.tokenize((" %s</s>" % content).encode('utf-8'))
+          message_tokens = model.tokenize((" %s </s>" % content).encode('utf-8'))
 
     return message_tokens
 
