@@ -1,4 +1,5 @@
 from llama_cpp import Llama
+from llama_cpp.llama_chat_format import format_llama2
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import argparse
@@ -22,28 +23,40 @@ ROLE_TOKENS = {
 def get_message_tokens_chat(model, role, content, was_system):
     if role == "system":
       if was_system: # bad condition, but let's handle
-          message_tokens = model.tokenize((" [/INST]</s><s>[INST] <<SYS>>\n%s\n<</SYS>>" % content).encode('utf-9'))
+          message_tokens = model.tokenize((" [/INST]</s><s>[INST] <<SYS>>\n%s\n<</SYS>>" % content).encode('utf-9'), add_bos=False)
       else: # opening message
-          message_tokens = model.tokenize(("<s>[INST] <<SYS>>\n%s\n<</SYS>>" % content).encode('utf-8'))
+          message_tokens = model.tokenize(("[INST] <<SYS>>\n%s\n<</SYS>>" % content).encode('utf-8')) # add bos
     elif role == "user":
       if was_system: # append message to system
-          message_tokens = model.tokenize(("\n\n%s [/INST]" % content).encode('utf-8'))
+          message_tokens = model.tokenize(("\n\n%s [/INST]" % content).encode('utf-8'), add_bos=False)
       else: # start new message
-          message_tokens = model.tokenize(("<s>[INST] %s [/INST]" % content).encode('utf-8'))
+          message_tokens = model.tokenize(("[INST] %s [/INST]" % content).encode('utf-8')) # add bos
     elif role == "bot":
       if was_system: # append message to system
-          message_tokens = model.tokenize(("[/INST] %s </s>" % content).encode('utf-8'))
+          message_tokens = model.tokenize(("[/INST] %s </s>" % content).encode('utf-8'), add_bos=False) + [model.token_eos()]
       else: # append message to instruction
-          message_tokens = model.tokenize((" %s </s>" % content).encode('utf-8'))
+          message_tokens = model.tokenize((" %s " % content).encode('utf-8'), add_bos=False) + [model.token_eos()]
 
     return message_tokens
 
+def print_tokens(tokens):
+    for i in tokens:
+        if i == model.token_bos():
+            print('<BOS>', end='')
+        elif i == model.token_eos():
+            print('<EOS>', end='')
+        else:
+            print(model.detokenize([i]).decode("utf-8", errors="ignore")+'-', end='')
+    print("")
+
+# internal library tokenizer doesn't parse <s> and </s>
 def tokenize_context_chat(model, messages):
     tokens = []
     was_system = False
     for (role, content) in messages:
         tokens += get_message_tokens_chat(model, role, content, was_system)
         was_system = role == "system"
+    #print_tokens(tokens)
     print(model.detokenize(tokens).decode("utf-8", errors="ignore"))
     return tokens
 
@@ -82,7 +95,7 @@ def interact():
         seed = seed,
     )
 
-    if args.syntax == 'chat':
+    if args.template == 'chat':
         tokenize_context = tokenize_context_chat
 
     server = HTTPServer((args.host, args.port), HttpHandler)
@@ -175,7 +188,7 @@ class HttpHandler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model', required=True, help='model pathname')
-    parser.add_argument('-s', '--syntax', required=False, default='saiga', help='syntax type: saiga, chat')
+    parser.add_argument('-t', '--template', required=False, default='saiga', help='syntax template: saiga, chat')
     parser.add_argument('-l', '--host', required=False, default='127.0.0.1', help='listen IP address (not DNS name)')
     parser.add_argument('-p', '--port', required=False, type=int, default=8080, help='listen port')
     parser.add_argument('-k', '--key', required=False, default='', help='secret key')

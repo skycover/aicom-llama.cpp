@@ -69,9 +69,9 @@ For a good experience I suggest to use at least 13B models, quantized to at leas
 
 ## Model conversation templates
 
-When using Llama2-chat model, specify "-s chat" in command line.
+When using Llama2-chat model, specify "-t chat" in command line.
 Otherwise the Saiga format will be used.
-The formatters are custom (not library ones) for the historical reasons.
+Both formatters are custom (not library ones).
 
 ## Run
 
@@ -97,9 +97,9 @@ python aicom_llamacpp.py -h
 
 ## Examples
 
-Llama2-chat on Mac with access key
+Llama2-chat on Mac with access key 'secret'
 ```
-python aicom_llamacpp.py -k secret -m models/13B/llama-2-13b-chat.Q4_K_M.gguf --n_gpu_layers=1 -s chat
+python aicom_llamacpp.py -k secret -m models/13B/llama-2-13b-chat.Q4_K_M.gguf --n_gpu_layers=1 -t chat
 ```
 
 Saiga on Mac with access key
