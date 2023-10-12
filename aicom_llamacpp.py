@@ -77,7 +77,6 @@ def tokenize_context_saiga(model, messages):
 
 tokenize_context = tokenize_context_saiga
 model = ''
-tokens = []
 args = {}
 
 def interact():
@@ -102,6 +101,7 @@ def interact():
     print(f"Starting server at {args.host}:{+args.port}, use Ctrl+C to stop")
     server.serve_forever()
 
+first_token = True
 
 class HttpHandler(BaseHTTPRequestHandler):
     def send_reply(self, code, message):
@@ -113,7 +113,7 @@ class HttpHandler(BaseHTTPRequestHandler):
         self.wfile.write(message.encode())
 
     def do_POST(self):
-        global model, args, generator, tokens
+        global model, args, generator, first_token
         (host, port) = self.client_address;
         path = self.path
 
@@ -134,6 +134,7 @@ class HttpHandler(BaseHTTPRequestHandler):
                     return
 
                 tokens = tokenize_context(model, pquery['messages'])
+                first_token = True
                 generator = model.generate(
                     tokens,
                     top_k = pquery['params'].get('top_k', args.top_k),
@@ -149,7 +150,7 @@ class HttpHandler(BaseHTTPRequestHandler):
             self.send_reply(404,'not found')
 
     def do_GET(self):
-        global model, generator
+        global model, generator, first_token
         (host, port) = self.client_address;
         urlreq = self.path.split("?")
         path = urlreq[0]
@@ -174,12 +175,20 @@ class HttpHandler(BaseHTTPRequestHandler):
                 return
 
             token_str = model.detokenize([token]).decode("utf-8", errors="ignore")
-            tokens.append(token)
+            #print(token, token_str)
             if token == model.token_eos():
                 self.send_reply(200, '[[END OF AICOM SENTENCE]]')
                 return
 
-            self.send_reply(200, token_str)
+            if first_token and token == 29871:
+                self.send_reply(200, '')
+                return
+
+            if first_token:
+                self.send_reply(200, token_str.lstrip())
+            else:
+                self.send_reply(200, token_str)
+            first_token = False
 
         else:
             self.send_reply(404,'not found')
