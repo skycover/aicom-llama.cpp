@@ -5,6 +5,7 @@ import json
 import argparse
 from random import randint
 
+# token definition for saiga and mistral templates
 SYSTEM_TOKEN = 1788
 USER_TOKEN = 1404
 BOT_TOKEN = 9225
@@ -80,11 +81,13 @@ model = ''
 args = {}
 
 def interact():
-    global model, args, tokenize_context
+    global model, args, tokenize_context, SYSTEM_TOKEN, USER_TOKEN, BOT_TOKEN, LINEBREAK_TOKEN
 
     if args.seed == -1:
         seed = randint(0, 2147483647)
         print('Generated seed:', seed)
+    else:
+        seed = args.seed
 
     model = Llama(
         model_path=args.model,
@@ -92,10 +95,18 @@ def interact():
         n_parts=1,
         n_gpu_layers=args.n_gpu_layers,
         seed = seed,
+        lora_path = args.lora,
+        lora_base = args.lora_base,
     )
 
     if args.template == 'chat':
         tokenize_context = tokenize_context_chat
+    elif args.template == 'mistral':
+        SYSTEM_TOKEN = 1587
+        USER_TOKEN = 2188
+        BOT_TOKEN = 12435
+        LINEBREAK_TOKEN = 13
+        tokenize_context = tokenize_context_saiga
 
     server = HTTPServer((args.host, args.port), HttpHandler)
     print(f"Starting server at {args.host}:{+args.port}, use Ctrl+C to stop")
@@ -197,7 +208,7 @@ class HttpHandler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model', required=True, help='model pathname')
-    parser.add_argument('-t', '--template', required=False, default='saiga', help='syntax template: saiga, chat')
+    parser.add_argument('-t', '--template', required=False, default='saiga', help='syntax template: saiga, chat, mistral')
     parser.add_argument('-l', '--host', required=False, default='127.0.0.1', help='listen IP address (not DNS name)')
     parser.add_argument('-p', '--port', required=False, type=int, default=8080, help='listen port')
     parser.add_argument('-k', '--key', required=False, default='', help='secret key')
@@ -208,6 +219,8 @@ if __name__ == "__main__":
     parser.add_argument('--repeat_penalty', required=False, type=float, default=1.1)
     parser.add_argument('--seed', required=False, type=int, default=-1)
     parser.add_argument('--n_gpu_layers', required=False, type=int, default=0, help='set 1 for Metal (Apple M1,M2)')
+    parser.add_argument('--lora', required=False, help='path to LoRA file')
+    parser.add_argument('--lora_base', required=False, help='path to LoRA file')
     # defaults from 
     #top_k=40,
     #top_p=0.5,
